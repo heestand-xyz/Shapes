@@ -20,6 +20,18 @@ public struct RoundedArc: Shape {
         self.cornerRadius = cornerRadius
     }
     
+    public init(
+        from leadingAngle: Angle,
+        to trailingAngle: Angle,
+        width: CGFloat,
+        cornerRadius: CGFloat
+    ) {
+        self.angle = (leadingAngle + trailingAngle) / 2
+        self.length = .radians(abs((trailingAngle - leadingAngle).radians))
+        self.width = width
+        self.cornerRadius = cornerRadius
+    }
+    
     public func path(in rect: CGRect) -> Path {
         
         let outerRadius: CGFloat = min(rect.width, rect.height) / 2

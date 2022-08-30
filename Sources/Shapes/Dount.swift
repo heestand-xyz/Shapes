@@ -1,5 +1,5 @@
 //
-//  Dount.swift
+//  Donut.swift
 //  
 //
 //  Created by Anton Heestand on 2022-08-29.
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @available(iOS 15.0, *)
-public struct Dount: Shape {
+public struct Donut: Shape {
     
     let width: CGFloat
     
@@ -28,8 +28,8 @@ public struct Dount: Shape {
 }
 
 @available(iOS 15.0, *)
-struct Dount_Previews: PreviewProvider {
+struct Donut_Previews: PreviewProvider {
     static var previews: some View {
-        Dount(width: 50)
+        Donut(width: 50)
     }
 }
