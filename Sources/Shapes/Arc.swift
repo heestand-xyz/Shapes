@@ -2,10 +2,27 @@ import SwiftUI
 
 public struct Arc: Shape {
     
-    let angle: Angle
-    let length: Angle
+    var angle: Angle
+    var length: Angle
     
-    let width: CGFloat
+    var width: CGFloat
+   
+    public var animatableData: AnimatablePair<
+        AnimatablePair<CGFloat, CGFloat>,
+        CGFloat
+    > {
+        get {
+            AnimatablePair(
+                AnimatablePair(angle.radians, length.radians),
+                width
+            )
+        }
+        set {
+            angle = .radians(newValue.first.first)
+            length = .radians(newValue.first.second)
+            width = newValue.second
+        }
+    }
     
     public init(
         angle: Angle,

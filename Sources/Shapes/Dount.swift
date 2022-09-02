@@ -10,7 +10,16 @@ import SwiftUI
 @available(iOS 15.0, *)
 public struct Donut: Shape {
     
-    let width: CGFloat
+    var width: CGFloat
+    
+    public var animatableData: CGFloat {
+        get {
+            width
+        }
+        set {
+            width = newValue
+        }
+    }
     
     public init(width: CGFloat) {
         self.width = width

@@ -2,11 +2,29 @@ import SwiftUI
 
 public struct RoundedArc: Shape {
     
-    let angle: Angle
-    let length: Angle
+    var angle: Angle
+    var length: Angle
     
-    let width: CGFloat
-    let cornerRadius: CGFloat
+    var width: CGFloat
+    var cornerRadius: CGFloat
+   
+    public var animatableData: AnimatablePair<
+        AnimatablePair<CGFloat, CGFloat>,
+            AnimatablePair<CGFloat, CGFloat>
+    > {
+        get {
+            AnimatablePair(
+                AnimatablePair(angle.radians, length.radians),
+                AnimatablePair(width, cornerRadius)
+            )
+        }
+        set {
+            angle = .radians(newValue.first.first)
+            length = .radians(newValue.first.second)
+            width = newValue.second.first
+            cornerRadius = newValue.second.second
+        }
+    }
     
     public init(
         angle: Angle,
