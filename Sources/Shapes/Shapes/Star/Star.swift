@@ -4,46 +4,16 @@ public struct Star: Shape {
     
     let count: Int
     
-    enum CornerRadius {
-        case relative(CGFloat)
-        case constant(CGFloat)
-        func relativeRadius(maxRadius: CGFloat) -> CGFloat {
-            switch self {
-            case .relative(let relativeRadius):
-                return relativeRadius
-            case .constant(let radius):
-                return radius / maxRadius
-            }
-        }
-        var animatablePair: AnimatablePair<CGFloat, CGFloat> {
-            get {
-                switch self {
-                case .relative(let relativeRadius):
-                    return AnimatablePair(0.0, relativeRadius)
-                case .constant(let radius):
-                    return AnimatablePair(1.0, radius)
-                }
-            }
-            set {
-                if newValue.first == 0.0 {
-                    self = .relative(newValue.second)
-                } else {
-                    self = .constant(newValue.second)
-                }
-            }
-        }
-    }
-    
     var radii: ClosedRange<CGFloat>
-    var cornerRadius: CornerRadius
+    var cornerRadius: CGFloat
     
-    public var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>, AnimatablePair<CGFloat, CGFloat>> {
+    public var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>, CGFloat> {
         get {
-            AnimatablePair(AnimatablePair(radii.lowerBound, radii.upperBound), cornerRadius.animatablePair)
+            AnimatablePair(AnimatablePair(radii.lowerBound, radii.upperBound), cornerRadius)
         }
         set {
             radii = newValue.first.first...newValue.first.second
-            cornerRadius.animatablePair = newValue.second
+            cornerRadius = newValue.second
         }
     }
     
@@ -55,18 +25,7 @@ public struct Star: Shape {
     public init(count: Int, radii: ClosedRange<CGFloat>, cornerRadius: CGFloat = 0.0) {
         self.count = max(count, 3)
         self.radii = radii
-        self.cornerRadius = .constant(max(cornerRadius, 0.0))
-    }
-    
-    /// Star
-    /// - Parameters:
-    ///   - count: The point count of the star.
-    ///   - radii: The lower bound is the inner radius and the upper bound is the outer radius.
-    ///   - relativeCornerRadius: This value is between `0.0` and `1.0`, where `0.0` is a pure star.
-    public init(count: Int, radii: ClosedRange<CGFloat>, relativeCornerRadius: CGFloat) {
-        self.count = max(count, 3)
-        self.radii = radii
-        self.cornerRadius = .relative(min(max(relativeCornerRadius, 0.0), 1.0))
+        self.cornerRadius = max(cornerRadius, 0.0)
     }
     
     public func path(in rect: CGRect) -> Path {
@@ -75,22 +34,22 @@ public struct Star: Shape {
         
         let size: CGSize = rect.size
         
-        let maxCornerRadius = maxCornerRadius(size: size)
-        let relativeCornerRadius = min(max(cornerRadius.relativeRadius(maxRadius: maxCornerRadius), 0.0), 1.0)
-        
-        if relativeCornerRadius == 0.0 {
+        if cornerRadius == 0.0 {
             
             for i in 0..<count {
                 
                 if i == 0 {
-                    let currentPoint: CGPoint = point(angle: angle(index: CGFloat(i)), radius: radii.lowerBound, size: size)
+                    let currentPoint: CGPoint = point(angle: angle(index: CGFloat(i)), 
+                                                      radius: radii.lowerBound, size: size)
                     path.move(to: currentPoint)
                 }
                 
-                let nextOuterPoint: CGPoint = point(angle: angle(index: CGFloat(i) + 1.0), radius: radii.upperBound, size: size)
+                let nextOuterPoint: CGPoint = point(angle: angle(index: CGFloat(i) + 1.0), 
+                                                    radius: radii.upperBound, size: size)
                 path.addLine(to: nextOuterPoint)
                 
-                let nextInnerPoint: CGPoint = point(angle: angle(index: CGFloat(i) + 1.5), radius: radii.lowerBound, size: size)
+                let nextInnerPoint: CGPoint = point(angle: angle(index: CGFloat(i) + 1.5), 
+                                                    radius: radii.lowerBound, size: size)
                 path.addLine(to: nextInnerPoint)
                 
             }
@@ -99,9 +58,6 @@ public struct Star: Shape {
             
         } else {
             
-            let cornerRadius: CGFloat = relativeCornerRadius * maxCornerRadius
-            
-            let isConcave: Bool = true
             let isSubConvex: Bool = {
                 let fraction: CGFloat = 1.0 / CGFloat(count)
                 let pointA = CGPoint(x: cos(0.0) * radii.upperBound,
@@ -119,42 +75,42 @@ public struct Star: Shape {
                 let prevInnerPoint: CGPoint = point(angle: angle(index: CGFloat(i) - 0.5), radius: radii.lowerBound, size: size)
                 let currentOuterPoint: CGPoint = point(angle: angle(index: CGFloat(i)), radius: radii.upperBound, size: size)
                 let nextInnerPoint: CGPoint = point(angle: angle(index: CGFloat(i) + 0.5), radius: radii.lowerBound, size: size)
+                let nextOuterPoint: CGPoint = point(angle: angle(index: CGFloat(i) + 1.0), radius: radii.upperBound, size: size)
 
                 let outerCornerCircle: RoundedCornerCircle = roundedCornerCircle(leading: prevInnerPoint,
                                                                                  center: currentOuterPoint,
                                                                                  trailing: nextInnerPoint,
                                                                                  cornerRadius: cornerRadius)
+                
+                let innerCornerCircle: RoundedCornerCircle = roundedCornerCircle(leading: currentOuterPoint,
+                                                                                 center: nextInnerPoint,
+                                                                                 trailing: nextOuterPoint,
+                                                                                 cornerRadius: cornerRadius)
+                let outerLeadingAngle: Angle = .radians(atan2(
+                    outerCornerCircle.leading.y - outerCornerCircle.center.y,
+                    outerCornerCircle.leading.x - outerCornerCircle.center.x))
+                let outerTrailingAngle: Angle = .radians(atan2(
+                    outerCornerCircle.trailing.y - outerCornerCircle.center.y,
+                    outerCornerCircle.trailing.x - outerCornerCircle.center.x))
 
-                let outerStartAngle = angle(index: CGFloat(i) - 0.5)
-                let outerStartAngleInRadians: Angle = .radians(Double(outerStartAngle) * .pi * 2.0)
-                let outerEndAngle = angle(index: CGFloat(i) + 0.5)
-                let outerEndAngleInRadians: Angle = .radians(Double(outerEndAngle) * .pi * 2.0)
+                let innerLeadingAngle: Angle = .radians(atan2(
+                    innerCornerCircle.leading.y - innerCornerCircle.center.y,
+                    innerCornerCircle.leading.x - innerCornerCircle.center.x))
+                let innerTrailingAngle: Angle = .radians(atan2(
+                    innerCornerCircle.trailing.y - innerCornerCircle.center.y,
+                    innerCornerCircle.trailing.x - innerCornerCircle.center.x))
 
                 path.addArc(center: outerCornerCircle.center,
                             radius: cornerRadius,
-                            startAngle: outerStartAngleInRadians,
-                            endAngle: outerEndAngleInRadians,
+                            startAngle: outerLeadingAngle,
+                            endAngle: outerTrailingAngle,
                             clockwise: false)
-
-                let prevOuterPoint: CGPoint = point(angle: angle(index: CGFloat(i)), radius: radii.upperBound, size: size)
-                let currentInnerPoint: CGPoint = point(angle: angle(index: CGFloat(i) + 0.5), radius: radii.lowerBound, size: size)
-                let nextOuterPoint: CGPoint = point(angle: angle(index: CGFloat(i) + 1.0), radius: radii.upperBound, size: size)
-
-                let innerCornerCircle: RoundedCornerCircle = roundedCornerCircle(leading: prevOuterPoint,
-                                                                                 center: currentInnerPoint,
-                                                                                 trailing: nextOuterPoint,
-                                                                                 cornerRadius: cornerRadius)
-
-                let innerStartAngle = angle(index: CGFloat(i) + 1.0) + 0.5
-                let innerStartAngleInRadians: Angle = .radians(Double(innerStartAngle) * .pi * 2.0)
-                let innerEndAngle = angle(index: CGFloat(i) + 0.0) + 0.5
-                let innerEndAngleInRadians: Angle = .radians(Double(innerEndAngle) * .pi * 2.0)
 
                 path.addArc(center: innerCornerCircle.center,
                             radius: cornerRadius,
-                            startAngle: innerStartAngleInRadians,
-                            endAngle: innerEndAngleInRadians,
-                            clockwise: true)
+                            startAngle: innerLeadingAngle,
+                            endAngle: innerTrailingAngle,
+                            clockwise: !isSubConvex)
                 
             }
             
@@ -177,25 +133,6 @@ public struct Star: Shape {
         let x: CGFloat = size.width / 2.0 + cos(angle * .pi * 2.0) * radius
         let y: CGFloat = size.height / 2.0 + sin(angle * .pi * 2.0) * radius
         return CGPoint(x: x, y: y)
-    }
-    
-    func maxCornerRadius(size: CGSize) -> CGFloat {
-        
-        let currentPoint: CGPoint = point(angle: angle(index: 0.0), radius: radii.upperBound, size: size)
-        let inBetweenPoint: CGPoint = point(angle: angle(index: 1.0), radius: radii.lowerBound, size: size)
-        let nextPoint: CGPoint = point(angle: angle(index: 1.0), radius: radii.upperBound, size: size)
-        
-        let midPoint: CGPoint = CGPoint(x: (currentPoint.x + nextPoint.x) / 2,
-                                        y: (currentPoint.y + nextPoint.y) / 2)
-        
-        let centerPoint: CGPoint = CGPoint(x: size.width / 2,
-                                           y: size.height / 2)
-        
-        let pointDistance: CGPoint = CGPoint(x: abs(midPoint.x - centerPoint.x),
-                                             y: abs(midPoint.y - centerPoint.y))
-        let distance: CGFloat = hypot(pointDistance.x, pointDistance.y)
-        
-        return distance
     }
     
     struct RoundedCornerCircle {
@@ -277,15 +214,11 @@ public struct Star: Shape {
 
 struct Star_Previews: PreviewProvider {
     static var previews: some View {
-        Star(count: 5, radii: 50...100)
+        Star(count: 5, radii: 50...100, cornerRadius: 10)
         VStack {
             Star(count: 3, radii: 90...100, cornerRadius: 10)
-                .stroke()
             Star(count: 4, radii: 75...100, cornerRadius: 15)
-                .stroke()
             Star(count: 5, radii: 45...100, cornerRadius: 20)
-                .stroke()
         }
-        Star(count: 5, radii: 50...100, relativeCornerRadius: 0.5)
     }
 }
