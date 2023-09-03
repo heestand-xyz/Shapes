@@ -1,58 +1,54 @@
 import SwiftUI
 
-public struct Arc: Shape {
+public struct Pie: Shape {
     
     var angle: Angle
     var length: Angle
     
-    var width: CGFloat
+    let asLine: Bool
    
-    public var animatableData: AnimatablePair<
-        AnimatablePair<CGFloat, CGFloat>,
-        CGFloat
-    > {
+    public var animatableData: AnimatablePair<CGFloat, CGFloat> {
         get {
-            AnimatablePair(
-                AnimatablePair(angle.radians, length.radians),
-                width
-            )
+            AnimatablePair(angle.radians, length.radians)
         }
         set {
-            angle = .radians(newValue.first.first)
-            length = .radians(newValue.first.second)
-            width = newValue.second
+            angle = .radians(newValue.first)
+            length = .radians(newValue.second)
         }
     }
     
     public init(
         angle: Angle,
         length: Angle,
-        width: CGFloat
+        asLine: Bool = false
     ) {
         self.angle = angle
         self.length = length
-        self.width = width
+        self.asLine = asLine
     }
     
     public init(
         from leadingAngle: Angle,
         to trailingAngle: Angle,
-        width: CGFloat
+        asLine: Bool = false
     ) {
         self.angle = (leadingAngle + trailingAngle) / 2
         self.length = .radians(abs((trailingAngle - leadingAngle).radians))
-        self.width = width
+        self.asLine = asLine
     }
     
     public func path(in rect: CGRect) -> Path {
         
         let outerRadius: CGFloat = min(rect.width, rect.height) / 2
-        let innerRadius: CGFloat = outerRadius - width
         
         let leadingAngle: Angle = angle - length / 2
         let trailingAngle: Angle = angle + length / 2
         
         return Path { path in
+            
+            if !asLine {
+                path.move(to: rect.center)
+            }
             
             path.addArc(center: rect.center,
                         radius: outerRadius,
@@ -60,20 +56,21 @@ public struct Arc: Shape {
                         endAngle: trailingAngle,
                         clockwise: false)
             
-            path.addArc(center: rect.center,
-                        radius: innerRadius,
-                        startAngle: trailingAngle,
-                        endAngle: leadingAngle,
-                        clockwise: true)
-            
-            path.closeSubpath()
+            if !asLine {
+                path.closeSubpath()
+            }
         }
     }
 }
 
-struct Arc_Previews: PreviewProvider {
+struct Pie_Previews: PreviewProvider {
     static var previews: some View {
-        Arc(angle: .zero, length: .degrees(90), width: 50)
-            .padding()
+        VStack {
+            Pie(angle: .zero, length: .degrees(90))
+                .padding()
+            Pie(angle: .zero, length: .degrees(90), asLine: true)
+                .stroke(lineWidth: 10)
+                .padding()
+        }
     }
 }
