@@ -101,7 +101,8 @@ public struct RoundedPie: Shape {
                         endAngle: trailingAngle + Angle(degrees: 90),
                         clockwise: false)
             
-            if let circle {
+            if length != .degrees(180),
+               let circle {
                 let leadingAngle: Angle = .radians(atan2(innerLeadingSidePoint.y - circle.center.y,
                                                          innerLeadingSidePoint.x - circle.center.x))
                 let trailingAngle: Angle = .radians(atan2(innerTrailingSidePoint.y - circle.center.y,
@@ -110,7 +111,7 @@ public struct RoundedPie: Shape {
                             radius: circle.radius,
                             startAngle: trailingAngle,
                             endAngle: leadingAngle,
-                            clockwise: abs(trailingAngle.degrees - leadingAngle.degrees) < 180)
+                            clockwise: length.degrees > 180)
             } else {
                 path.addLine(to: rect.center)
             }
@@ -146,12 +147,14 @@ public struct RoundedPie: Shape {
 struct RoundedPie_Previews: PreviewProvider {
     static var previews: some View {
         ScrollView {
-            ForEach([45, 90, 135, 180, 270, 360, 1000], id: \.self) { num in
-                RoundedPie(angle: .zero, length: .degrees(num), cornerRadius: 25)
-                    .stroke()
-                    .frame(width: 300, height: 300)
-                    .aspectRatio(1.0, contentMode: .fit)
-                    .padding()
+            ForEach([45, 90, 135, 180, 270, 360], id: \.self) { deg in
+                ForEach([45, 90, 135, 180, 270, 360, 1000], id: \.self) { num in
+                    RoundedPie(angle: .degrees(deg), length: .degrees(num), cornerRadius: 25)
+                        .stroke()
+                        .frame(width: 300, height: 300)
+                        .aspectRatio(1.0, contentMode: .fit)
+                        .padding()
+                }
             }
         }
     }
