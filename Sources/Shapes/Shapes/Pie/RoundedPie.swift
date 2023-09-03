@@ -46,7 +46,12 @@ public struct RoundedPie: Shape {
     
     public func path(in rect: CGRect) -> Path {
         
-        let outerRadius: CGFloat = min(rect.width, rect.height) / 2
+        let minLength = min(rect.width, rect.height)
+        let arcLength = length.radians * (minLength / 2)
+        print(cornerRadius, arcLength / 2)
+        let cornerRadius = min(cornerRadius, (arcLength / 2) * 0.9)
+        
+        let outerRadius: CGFloat = minLength / 2
         
         let outerPaddingRadius: CGFloat = outerRadius - cornerRadius
 
@@ -55,9 +60,6 @@ public struct RoundedPie: Shape {
         
         let outerPaddingAngle: Angle = Angle(radians: Double(cornerRadius / (outerRadius - cornerRadius)))
         
-        let innerCenter = CGPoint(
-            x: rect.center.x + cos(CGFloat(angle.radians)) * cornerRadius,
-            y: rect.center.y + sin(CGFloat(angle.radians)) * cornerRadius)
         let outerLeadingCenter = CGPoint(
             x: rect.center.x + cos(CGFloat(leadingAngle.radians + outerPaddingAngle.radians)) * outerPaddingRadius,
             y: rect.center.y + sin(CGFloat(leadingAngle.radians + outerPaddingAngle.radians)) * outerPaddingRadius)
@@ -65,6 +67,20 @@ public struct RoundedPie: Shape {
             x: rect.center.x + cos(CGFloat(trailingAngle.radians - outerPaddingAngle.radians)) * outerPaddingRadius,
             y: rect.center.y + sin(CGFloat(trailingAngle.radians - outerPaddingAngle.radians)) * outerPaddingRadius)
         
+        let innerLeadingSidePoint = CGPoint(
+            x: rect.center.x + cos(CGFloat(leadingAngle.radians)) * cornerRadius,
+            y: rect.center.y + sin(CGFloat(leadingAngle.radians)) * cornerRadius)
+        
+        let innerTrailingSidePoint = CGPoint(
+            x: rect.center.x + cos(CGFloat(trailingAngle.radians)) * cornerRadius,
+            y: rect.center.y + sin(CGFloat(trailingAngle.radians)) * cornerRadius)
+        
+        let innerTrailingSideExtraPoint = CGPoint(
+            x: rect.center.x + cos(CGFloat(trailingAngle.radians)) * (cornerRadius + 1),
+            y: rect.center.y + sin(CGFloat(trailingAngle.radians)) * (cornerRadius + 1))
+        
+        let circle = self.circle(innerLeadingSidePoint, innerTrailingSidePoint, innerTrailingSideExtraPoint)
+
         return Path { path in
             
             path.addArc(center: outerLeadingCenter,
@@ -85,25 +101,58 @@ public struct RoundedPie: Shape {
                         endAngle: trailingAngle + Angle(degrees: 90),
                         clockwise: false)
             
-            path.addArc(center: innerCenter,
-                        radius: cornerRadius,
-                        startAngle: leadingAngle + Angle(degrees: 180),
-                        endAngle: trailingAngle + Angle(degrees: 180),
-                        clockwise: false)
+            if let circle {
+                let leadingAngle: Angle = .radians(atan2(innerLeadingSidePoint.y - circle.center.y,
+                                                         innerLeadingSidePoint.x - circle.center.x))
+                let trailingAngle: Angle = .radians(atan2(innerTrailingSidePoint.y - circle.center.y,
+                                                          innerTrailingSidePoint.x - circle.center.x))
+                path.addArc(center: circle.center,
+                            radius: circle.radius,
+                            startAngle: trailingAngle,
+                            endAngle: leadingAngle,
+                            clockwise: abs(trailingAngle.degrees - leadingAngle.degrees) < 180)
+            } else {
+                path.addLine(to: rect.center)
+            }
             
             path.closeSubpath()
         }
+    }
+    
+    /// GPT-4
+    func circle(_ point1: CGPoint, _ point2: CGPoint, _ point3: CGPoint) -> (center: CGPoint, radius: CGFloat)? {
+        
+        // Calculate the determinants
+        let D = 2 * (point1.x * (point2.y - point3.y) + point2.x * (point3.y - point1.y) + point3.x * (point1.y - point2.y))
+        if D == 0 {
+            return nil
+        }
+        
+        // Calculate the center (h, k)
+        let h = ((point1.x * point1.x + point1.y * point1.y) * (point2.y - point3.y) + (point2.x * point2.x + point2.y * point2.y) * (point3.y - point1.y) + (point3.x * point3.x + point3.y * point3.y) * (point1.y - point2.y)) / D
+        let k = ((point1.x * point1.x + point1.y * point1.y) * (point3.x - point2.x) + (point2.x * point2.x + point2.y * point2.y) * (point1.x - point3.x) + (point3.x * point3.x + point3.y * point3.y) * (point2.x - point1.x)) / D
+        
+        let center = CGPoint(x: h, y: k)
+        
+        // Calculate the radius r
+        let dx = center.x - point1.x
+        let dy = center.y - point1.y
+        let radius = sqrt(dx * dx + dy * dy)
+        
+        return (center: center, radius: radius)
     }
 }
 
 struct RoundedPie_Previews: PreviewProvider {
     static var previews: some View {
-        VStack {
-            RoundedPie(angle: .zero, length: .degrees(90), cornerRadius: 15)
-                .padding()
-            RoundedPie(angle: .zero, length: .degrees(90), cornerRadius: 15)
-                .stroke(lineWidth: 10)
-                .padding()
+        ScrollView {
+            ForEach([45, 90, 135, 180, 270, 360, 1000], id: \.self) { num in
+                RoundedPie(angle: .zero, length: .degrees(num), cornerRadius: 25)
+                    .stroke()
+                    .frame(width: 300, height: 300)
+                    .aspectRatio(1.0, contentMode: .fit)
+                    .padding()
+            }
         }
     }
 }

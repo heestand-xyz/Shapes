@@ -39,18 +39,18 @@ public struct Star: Shape {
             for i in 0..<count {
                 
                 if i == 0 {
-                    let currentPoint: CGPoint = point(angle: angle(index: CGFloat(i)), 
-                                                      radius: radii.lowerBound, size: size)
-                    path.move(to: currentPoint)
+                    let startPoint: CGPoint = point(angle: angle(index: CGFloat(i) - 0.5),
+                                                    radius: radii.lowerBound, size: size)
+                    path.move(to: startPoint)
                 }
                 
-                let nextOuterPoint: CGPoint = point(angle: angle(index: CGFloat(i) + 1.0), 
-                                                    radius: radii.upperBound, size: size)
-                path.addLine(to: nextOuterPoint)
+                let outerPoint: CGPoint = point(angle: angle(index: CGFloat(i)),
+                                                radius: radii.upperBound, size: size)
+                path.addLine(to: outerPoint)
                 
-                let nextInnerPoint: CGPoint = point(angle: angle(index: CGFloat(i) + 1.5), 
-                                                    radius: radii.lowerBound, size: size)
-                path.addLine(to: nextInnerPoint)
+                let innerPoint: CGPoint = point(angle: angle(index: CGFloat(i) + 0.5),
+                                                radius: radii.lowerBound, size: size)
+                path.addLine(to: innerPoint)
                 
             }
             
