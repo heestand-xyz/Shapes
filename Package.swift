@@ -5,10 +5,10 @@ import PackageDescription
 let package = Package(
     name: "Shapes",
     platforms: [
-        .iOS(.v13),
-        .tvOS(.v13),
-        .watchOS(.v6),
-        .macOS(.v10_15),
+        .iOS(.v15),
+        .tvOS(.v15),
+        .watchOS(.v8),
+        .macOS(.v12),
     ],
     products: [
         .library(
