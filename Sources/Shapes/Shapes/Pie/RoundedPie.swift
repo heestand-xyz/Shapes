@@ -30,7 +30,7 @@ public struct RoundedPie: Shape {
         cornerRadius: CGFloat
     ) {
         self.angle = angle
-        self.length = length
+        self.length = .radians(max(0.0, length.radians))
         self.cornerRadius = cornerRadius
     }
     
