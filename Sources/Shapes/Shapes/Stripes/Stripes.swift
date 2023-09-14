@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-public struct Stripes: View {
+public struct Stripes: Shape {
     
     private let length: CGFloat
     private let spacing: CGFloat
@@ -19,14 +19,10 @@ public struct Stripes: View {
         self.angle = angle
     }
     
-    public var body: some View {
-        Canvas { context, size in
-            context.fill(path(size: size), with: .foreground)
-        }
-    }
-    
-    private func path(size: CGSize) -> Path {
+    public func path(in rect: CGRect) -> Path {
         Path { path in
+            
+            let size: CGSize = rect.size
             
             let angle: Angle = angle + .degrees(90)
 
