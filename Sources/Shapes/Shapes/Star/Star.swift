@@ -12,7 +12,7 @@ public struct Star: Shape {
             AnimatablePair(AnimatablePair(radii.lowerBound, radii.upperBound), cornerRadius)
         }
         set {
-            radii = newValue.first.first...newValue.first.second
+            radii = newValue.first.first...max(newValue.first.first + 0.001, newValue.first.second)
             cornerRadius = newValue.second
         }
     }
